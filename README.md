@@ -54,10 +54,15 @@ still require their respective network access.
 - Explore the detailed home page, including what is tracked and why.
 - Search requests by ID, title, or category.
 - Switch between active, all, and resolved views.
-- Sort by newest or priority.
+- Sort by newest (the default), priority, or **SLA deadline first**.
 - Create synthetic requests with visible title validation.
 - Start work, resolve requests, and watch totals update.
 - Reset demo data with one button.
+
+**SLA deadline first** places active requests before resolved work, then orders
+each group by earliest deadline, higher priority, older creation time, and request
+ID. It reuses the existing SLA targets; with seed data, **SR-1042** is first in the
+active queue.
 
 Changes live in memory only. Reloading restores the eight seed requests. The SLA
 clock is fixed at **2026-10-29 14:00 UTC**, so rehearsals do not drift over time.
