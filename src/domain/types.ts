@@ -10,6 +10,7 @@ export const CATEGORIES = ['Access', 'Hardware', 'Software', 'Network'] as const
 export const SORT_OPTIONS = [
   { value: 'newest', label: 'Newest first' },
   { value: 'priority', label: 'Priority first' },
+  { value: 'sla', label: 'SLA deadline first' },
 ] as const
 
 export type Priority = (typeof PRIORITY_OPTIONS)[number]['value']

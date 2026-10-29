@@ -54,6 +54,13 @@ export function sortRequests(
   sortOrder: SortOrder,
 ): ServiceRequest[] {
   return [...requests].sort((left, right) => {
+    if (sortOrder === 'sla') {
+      return Number(left.status === 'resolved') - Number(right.status === 'resolved')
+        || getDeadline(left) - getDeadline(right)
+        || PRIORITY_RANK[right.priority] - PRIORITY_RANK[left.priority]
+        || Date.parse(left.createdAt) - Date.parse(right.createdAt)
+        || left.id.localeCompare(right.id)
+    }
     if (sortOrder === 'priority') {
       return PRIORITY_RANK[right.priority] - PRIORITY_RANK[left.priority]
         || Date.parse(left.createdAt) - Date.parse(right.createdAt)

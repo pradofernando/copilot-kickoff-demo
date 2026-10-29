@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { describe, test } from 'node:test'
 import { DEMO_NOW, DEMO_REQUESTS } from '../data/requests.ts'
 import type { Priority, ServiceRequest } from './types.ts'
+import { isSortOrder, SORT_OPTIONS } from './types.ts'
 import {
   filterRequests,
   getDashboardStats,
@@ -140,6 +141,76 @@ describe('sorting', () => {
   test('empty lists work for either baseline sort order', () => {
     assert.deepEqual(sortRequests([], 'newest'), [])
     assert.deepEqual(sortRequests([], 'priority'), [])
+  })
+})
+
+describe('SLA deadline sorting', () => {
+  test('the shared options expose and validate SLA deadline first', () => {
+    assert.deepEqual(SORT_OPTIONS.map((option) => option.value), ['newest', 'priority', 'sla'])
+    assert.equal(SORT_OPTIONS.find((option) => option.value === 'sla')?.label, 'SLA deadline first')
+    assert.equal(isSortOrder('sla'), true)
+  })
+
+  test('earlier deadlines take precedence over priority and creation time', () => {
+    const items = [
+      request({ id: 'critical', priority: 'critical', createdAt: '2026-10-29T12:00:00Z' }),
+      request({ id: 'normal', priority: 'normal', createdAt: '2026-10-28T14:00:00Z' }),
+      request({ id: 'high', createdAt: '2026-10-29T08:00:00Z' }),
+    ]
+    assert.deepEqual(sortRequests(items, 'sla').map((item) => item.id), ['high', 'critical', 'normal'])
+  })
+
+  test('open and in-progress requests precede resolved work even with earlier deadlines', () => {
+    const items = [
+      request({ id: 'resolved-later', status: 'resolved', createdAt: '2026-10-28T09:00:00Z' }),
+      request({ id: 'open', createdAt: '2026-10-29T10:00:00Z' }),
+      request({ id: 'resolved-earlier', status: 'resolved', createdAt: '2026-10-28T08:00:00Z' }),
+      request({ id: 'in-progress', status: 'in-progress', createdAt: '2026-10-29T09:00:00Z' }),
+    ]
+    assert.deepEqual(sortRequests(items, 'sla').map((item) => item.id), [
+      'in-progress', 'open', 'resolved-earlier', 'resolved-later',
+    ])
+  })
+
+  for (const status of ['open', 'resolved'] as const) {
+    test(`equal deadlines use higher priority then ID for ${status} work`, () => {
+      const items = [
+        request({ id: 'normal', status, priority: 'normal', createdAt: '2026-10-28T14:00:00Z' }),
+        request({ id: 'high', status, createdAt: '2026-10-29T10:00:00Z' }),
+        request({ id: 'B', status, priority: 'critical', createdAt: '2026-10-29T13:00:00Z' }),
+        request({ id: 'A', status, priority: 'critical', createdAt: '2026-10-29T13:00:00Z' }),
+      ]
+      assert.equal(new Set(items.map(getDeadline)).size, 1)
+      assert.deepEqual(sortRequests(items, 'sla').map((item) => item.id), ['A', 'B', 'high', 'normal'])
+    })
+  }
+
+  test('empty input returns a new empty array', () => {
+    const items = Object.freeze([])
+    const sorted = sortRequests(items, 'sla')
+    assert.deepEqual(sorted, [])
+    assert.notEqual(sorted, items)
+  })
+
+  test('sorting preserves frozen input arrays and records', () => {
+    const items = Object.freeze([
+      Object.freeze(request({ id: 'B' })),
+      Object.freeze(request({ id: 'A' })),
+    ])
+    const snapshot = structuredClone(items)
+    const sorted = sortRequests(items, 'sla')
+    assert.deepEqual(sorted.map((item) => item.id), ['A', 'B'])
+    assert.notEqual(sorted, items)
+    assert.equal(sorted[0], items[1])
+    assert.equal(sorted[1], items[0])
+    assert.deepEqual(items, snapshot)
+  })
+
+  test('SR-1042 is first in the active seed queue', () => {
+    const active = filterRequests(DEMO_REQUESTS, '', 'active')
+    assert.deepEqual(sortRequests(active, 'sla').map((item) => item.id), [
+      'SR-1042', 'SR-1043', 'SR-1047', 'SR-1045', 'SR-1044', 'SR-1046',
+    ])
   })
 })
 
