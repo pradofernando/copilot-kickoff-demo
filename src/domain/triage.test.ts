@@ -112,6 +112,34 @@ describe('filtering', () => {
   })
 })
 
+describe('SLA-first sorting', () => {
+  test('active deadlines come first and resolved work stays last', () => {
+    const items = [
+      request({ id: 'resolved', status: 'resolved', priority: 'critical', createdAt: '2026-10-29T08:00:00Z' }),
+      request({ id: 'later', createdAt: '2026-10-29T12:00:00Z' }),
+      request({ id: 'first', priority: 'normal', createdAt: '2026-10-28T10:00:00Z' }),
+      request({ id: 'second', priority: 'critical', createdAt: '2026-10-29T12:00:00Z' }),
+    ]
+    assert.deepEqual(sortRequests(items, 'sla').map((item) => item.id), ['first', 'second', 'later', 'resolved'])
+  })
+
+  test('equal deadlines use priority, then ID for deterministic ties', () => {
+    const items = [
+      request({ id: 'high', createdAt: '2026-10-29T10:00:00Z' }),
+      request({ id: 'critical-B', priority: 'critical', createdAt: '2026-10-29T13:00:00Z' }),
+      request({ id: 'critical-A', priority: 'critical', createdAt: '2026-10-29T13:00:00Z' }),
+    ]
+    assert.deepEqual(sortRequests(items, 'sla').map((item) => item.id), ['critical-A', 'critical-B', 'high'])
+  })
+
+  test('SLA sorting does not mutate input and accepts an empty list', () => {
+    const items = Object.freeze([request({ id: 'B' }), request({ id: 'A' })])
+    assert.deepEqual(sortRequests(items, 'sla').map((item) => item.id), ['A', 'B'])
+    assert.deepEqual(items.map((item) => item.id), ['B', 'A'])
+    assert.deepEqual(sortRequests([], 'sla'), [])
+  })
+})
+
 describe('sorting', () => {
   test('newest first has a deterministic ID tie-break', () => {
     const items = [request({ id: 'B' }), request({ id: 'A' })]
