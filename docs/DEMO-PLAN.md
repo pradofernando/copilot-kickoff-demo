@@ -58,6 +58,11 @@ Keep [the prompt sheet](PROMPTS.md) on a second monitor. Pre-open the
 [tests](../src/domain/triage.test.ts), and customization files.
 Do not put the slide deck, personal downloads, or unrelated repos in this repo.
 
+The default app URL now opens the detailed home page. It explains what requests
+track and why, the workflow, SLA rules, and the lab's limits. Use it as take-home
+orientation, not an extra live tour: start the timed segment at
+<http://127.0.0.1:5173/#overview> to keep the 23-minute budget.
+
 ## Slide 9: capabilities without setup - 4 minutes
 
 **0:00-0:20 - Establish the application.**
@@ -219,7 +224,7 @@ Hand back according to the agreed deck handoff.
 
 - [ ] `main` is checked out, `npm run demo:status` reports baseline, and the worktree is clean.
 - [ ] `npm ci` was done beforehand; `npm run check` passes.
-- [ ] Browser shows the initial six active requests and two past SLA.
+- [ ] Browser is on the Workspace page, showing the initial six active requests and two past SLA.
 - [ ] Rehearse search, sorting, creation, resolution, and reset.
 - [ ] Confirm Copilot sign-in, two usable models, modes, and file attachments.
 - [ ] Confirm the CLI is installed **and authenticated**; installation alone is not enough.

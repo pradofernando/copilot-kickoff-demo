@@ -7,7 +7,7 @@ import type {
 } from './types.ts'
 
 const HOUR_MS = 60 * 60 * 1000
-const SLA_HOURS: Record<Priority, number> = { critical: 1, high: 4, normal: 24, low: 72 }
+export const SLA_HOURS: Readonly<Record<Priority, number>> = { critical: 1, high: 4, normal: 24, low: 72 }
 const PRIORITY_RANK: Record<Priority, number> = { critical: 4, high: 3, normal: 2, low: 1 }
 
 export function getDeadline(request: ServiceRequest): number {

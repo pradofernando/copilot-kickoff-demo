@@ -1,4 +1,6 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { HomePage } from './components/HomePage.tsx'
+import { QueueIllustration } from './components/QueueIllustration.tsx'
 import { RequestForm } from './components/RequestForm.tsx'
 import { RequestBoard } from './components/RequestBoard.tsx'
 import { DEMO_NOW, DEMO_REQUESTS } from './data/requests.ts'
@@ -7,12 +9,33 @@ import type { Category, Priority, ServiceRequest } from './domain/types.ts'
 import './App.css'
 
 function App() {
+  const [hash, setHash] = useState(() => window.location.hash)
+  const isHomePage = hash !== '#overview' && hash !== '#requests'
   const [requests, setRequests] = useState<ServiceRequest[]>([...DEMO_REQUESTS])
   const [isFormOpen, setFormOpen] = useState(false)
   const [announcement, setAnnouncement] = useState('')
   const nextId = useRef(1050)
   const newRequestButton = useRef<HTMLButtonElement>(null)
   const stats = getDashboardStats(requests, DEMO_NOW)
+
+  useEffect(() => {
+    function onHashChange() {
+      setHash(window.location.hash)
+    }
+    window.addEventListener('hashchange', onHashChange)
+    return () => window.removeEventListener('hashchange', onHashChange)
+  }, [])
+
+  useEffect(() => {
+    document.title = isHomePage ? 'ServiceDesk Lite | Meet your workspace' : 'ServiceDesk Lite | Workspace'
+    const target = document.getElementById(hash.slice(1) || 'home')
+    if (!hash || hash === '#home' || hash === '#overview') {
+      window.scrollTo({ top: 0, left: 0 })
+    } else {
+      target?.scrollIntoView({ block: 'start' })
+    }
+    target?.focus({ preventScroll: true })
+  }, [hash, isHomePage])
 
   function closeForm() {
     setFormOpen(false)
@@ -48,9 +71,9 @@ function App() {
 
   return (
     <div className="app-shell">
-      <a className="skip-link" href="#main">Skip to content</a>
+      <a className="skip-link" href={isHomePage ? '#home' : '#overview'}>Skip to content</a>
       <header className="site-header">
-        <a className="brand" href="#overview" aria-label="ServiceDesk Lite home">
+        <a className="brand" href="#home" aria-label="ServiceDesk Lite home">
           <span className="brand-mark" aria-hidden="true">
             <svg viewBox="0 0 32 32" fill="none">
               <path d="M22 9h-8a5 5 0 0 0 0 10h4a5 5 0 0 1 0 10" transform="translate(0 -3)" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
@@ -60,25 +83,28 @@ function App() {
           <span>servicedesk<span className="brand-lite">lite</span></span>
         </a>
         <nav aria-label="Workspace navigation">
-          <a className="nav-link" href="#overview">Overview</a>
-          <a className="nav-link" href="#requests">
+          <a className="nav-link" href="#home" aria-current={isHomePage ? 'page' : undefined}>Home</a>
+          <a className="nav-link" href="#overview" aria-current={!isHomePage && hash !== '#requests' ? 'page' : undefined}>Workspace</a>
+          <a className="nav-link" href="#requests" aria-current={hash === '#requests' ? 'location' : undefined}>
             The queue <span className="nav-count">{stats.active}</span>
           </a>
         </nav>
         <div className="header-actions">
           <span className="environment-badge"><span className="live-dot" /> Local demo</span>
-          <button className="reset-button" onClick={resetDemo} aria-label="Reset demo data">
+          {isHomePage ? <a className="button header-workspace-link" href="#overview">Open workspace <span aria-hidden="true">&rarr;</span></a> : <button className="reset-button" onClick={resetDemo} aria-label="Reset demo data">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
               <path d="M4 10a8 8 0 1 1 1.4 7M4 4v6h6" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             <span>Reset data</span>
           </button>
+          }
           <span className="workspace-avatar" aria-label="Demo workspace">sd</span>
         </div>
       </header>
 
       <main id="main">
-        <div className="main-content" id="overview">
+        {isHomePage && <HomePage active={stats.active} overdue={stats.overdue} />}
+        <div className="main-content" id="overview" hidden={isHomePage} tabIndex={-1}>
           <section className="page-heading" aria-labelledby="page-title">
             <div className="hero-copy">
               <p className="eyebrow"><span /> A LITTLE CLARITY GOES A LONG WAY</p>
@@ -100,39 +126,7 @@ function App() {
                 <span className="hero-caption">Clear priorities.<br />Calmer handoffs.</span>
               </div>
             </div>
-            <div className="hero-art" aria-hidden="true">
-              <svg className="orbit-art" viewBox="0 0 480 340" fill="none">
-                <defs>
-                  <linearGradient id="sage-wash" x1="140" y1="50" x2="355" y2="307" gradientUnits="userSpaceOnUse">
-                    <stop stopColor="#e0e9ce" /><stop offset="1" stopColor="#c8dbb8" />
-                  </linearGradient>
-                  <linearGradient id="lilac-wash" x1="285" y1="30" x2="430" y2="213" gradientUnits="userSpaceOnUse">
-                    <stop stopColor="#e6e2ec" /><stop offset="1" stopColor="#f0e9df" />
-                  </linearGradient>
-                </defs>
-                <path d="M201 51C257 20 326 50 352 106c26 56 19 109-25 153-44 44-119 54-170 13-51-41-42-97-23-144 19-47 26-54 67-77Z" fill="url(#sage-wash)" />
-                <path d="M335 37c37-8 73 14 84 47s-2 76-35 92-65-5-81-36-5-95 32-103Z" fill="url(#lilac-wash)" />
-                <ellipse cx="243" cy="171" rx="185" ry="76" transform="rotate(-29 243 171)" stroke="#819b73" strokeOpacity=".6" strokeWidth="1" />
-                <ellipse cx="243" cy="171" rx="153" ry="102" transform="rotate(32 243 171)" stroke="#819b73" strokeOpacity=".3" strokeWidth="1" />
-                <path d="M89 224c40 31 102 17 157-22s113-92 111-138" stroke="#69865e" strokeOpacity=".45" strokeWidth="1" strokeDasharray="3 7" />
-                <circle cx="90" cy="223" r="7" fill="#326548" />
-                <circle cx="390" cy="99" r="5" fill="#b79879" />
-                <circle cx="336" cy="276" r="4" fill="#8d85a2" />
-                <path d="m148 47 3 10 10 3-10 3-3 10-3-10-10-3 10-3 3-10Z" fill="#7e9770" />
-                <path d="m372 228 3 10 10 3-10 3-3 10-3-10-10-3 10-3 3-10Z" fill="#a69ab8" />
-              </svg>
-              <span className="art-lettering">Room for<br /><em>good work.</em></span>
-              <div className="floating-note note-active">
-                <span className="note-icon">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="m6 12 4 4 8-8" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                </span>
-                <span><strong>{stats.active} things in motion</strong><small>One focused step at a time</small></span>
-              </div>
-              <div className="floating-note note-attention">
-                <span className="attention-dot" /><span>{stats.overdue} need a little nudge</span>
-              </div>
-              <span className="art-date">THURSDAY, OCTOBER 29</span>
-            </div>
+            <QueueIllustration active={stats.active} overdue={stats.overdue} />
           </section>
 
           <section className="stats-grid" aria-label="Queue summary">

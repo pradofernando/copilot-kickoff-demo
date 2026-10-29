@@ -28,7 +28,7 @@ export function RequestBoard({ requests, now, onAdvance }: Props) {
   const visibleRequests = sortRequests(filterRequests(requests, query, view), sortOrder)
 
   return (
-    <section className="board" id="requests" aria-labelledby="queue-title">
+    <section className="board" id="requests" tabIndex={-1} aria-labelledby="queue-title">
       <div className="board-heading">
         <div><p className="eyebrow">MAKE SPACE FOR WHAT MATTERS</p>
           <h2 id="queue-title">Your team's rhythm <span className="count-pill">{requests.length}</span></h2>
